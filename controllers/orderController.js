@@ -1,21 +1,93 @@
-const orders = require('../model/orderSchema')
+const orders = require("../model/orderSchema");
 
-exports.getallorders = async (req,res)=>{
-    //logic
-   try{
-    const allorders =  await orders.find()
-   //send to client
-   res.status(200).json(allorders)
-    }
-    catch(error){
-        res.status(401).json(error)
-    }
-}
+const { ObjectId } = require("mongodb");
 
+exports.getallorders = async (req, res) => {
+  //logic
+  try {
+    const allorders = await orders.find();
+    const deliveredOrders = await orders.find({ status: "Delivered" });
+    const processingOrders = await orders.find({ status: "Processing" });
+
+    //send to client
+    res.status(200).json({
+      allorders: allorders,
+      deliveredOrders: deliveredOrders,
+      processingOrders: processingOrders,
+    });
+  } catch (error) {
+    res.status(401).json(error);
+  }
+};
+
+exports.addNewOrder = async (req, res) => {
+  const { id, date, time, name, mobile, item, amount, quantity, orderStatus } =
+    req.body;
+  console.log("req.body", req.body);
+  try {
+    const newOrder = new orders({
+      id,
+      date,
+      time,
+      name,
+      mobile,
+      item,
+      amount,
+      quantity,
+      orderStatus
+    });
+    await newOrder.save();
+    res.status(200).json("Order Successfully Added");
+  } catch (error) {
+    res.status(401).json(error);
+  }
+};
+
+exports.removeOrder = async (req, res) => {
+  // console.log(req.body);
+  const { id } = req.params;
+  console.log("id to delete : ", id);
+  try {
+    const objectid = new ObjectId(id);
+    console.log("Object-id : ", objectid);
+    const removeOrder = await orders.deleteOne({ _id: objectid });
+    if (removeOrder) {
+      const allorders = await orders.find();
+      res.status(200).json(allorders);
+    }
+  } catch (error) {
+    res.status(401).json(error);
+  }
+};
+
+exports.updateOrder = async (req, res) => {
+  try {
+    const orderId = req.params.id; // Assuming the ID is passed as a URL parameter
+    const updatedData = req.body; // Assuming the updated data is sent in the request body
+
+    // Validate if orderId is a valid ObjectId
+    if (!ObjectId.isValid(orderId)) {
+      return res.status(400).json({ error: 'Invalid order ID' });
+    }
+
+    // Update the order
+    const filter = { _id: ObjectId(orderId) };
+    const updateResult = await orders.updateOne(filter, { $set: updatedData });
+
+    if (updateResult.modifiedCount === 1) {
+      return res.json({ success: true, message: 'Order updated successfully' });
+    } else {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+  } catch (error) {
+    console.error('Error updating order:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
 
 // exports  register = async (acno, username, password) => {
 //     console.log("inside register logic");
-    
+
 //     try {
 //         // 1. get acno, uname and pswd from request body
 //         // asynchronous function call promise ()
