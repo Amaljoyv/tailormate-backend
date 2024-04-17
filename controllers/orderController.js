@@ -43,7 +43,7 @@ exports.getOneOrder = async (req, res) => {
 };
 
 exports.addNewOrder = async (req, res) => {
-  const { id, date, time, name, mobile, items, orderStatus } =
+  const { id, date, paymentMode , time, name, mobile , address , deliveryDate , reqWorkingDays , trialDate , items, orderStatus } =
     req.body;
   console.log("req.body", req.body);
   try {
@@ -56,9 +56,14 @@ exports.addNewOrder = async (req, res) => {
     const newOrder = new orders({
       id,
       date,
+      paymentMode,
       time,
       name,
       mobile,
+      address,
+      deliveryDate,
+      reqWorkingDays,
+      trialDate,
       items,
       orderStatus,
       totalAmount 
