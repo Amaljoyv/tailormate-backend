@@ -6,35 +6,62 @@ exports.getallorders = async (req, res) => {
   //logic
   try {
     const allorders = await orders.find();
-    const deliveredOrders = await orders.find({ status: "Delivered" });
-    const processingOrders = await orders.find({ status: "Processing" });
+    const deliveredOrders = await orders.find({ orderStatus: "Delivered" });
+    const processingOrders = await orders.find({ orderStatus: "Processing" });
+    const manufacturingOrders = await orders.find({ orderStatus: "Manufacturing" });
+    const dispatchOrders = await orders.find({ orderStatus: "Dispatch" });
+    const placedOrders = await orders.find({ orderStatus: "Order Placed" });
 
     //send to client
     res.status(200).json({
       allorders: allorders,
       deliveredOrders: deliveredOrders,
       processingOrders: processingOrders,
+      manufacturingOrders: manufacturingOrders,
+      dispatchOrders: dispatchOrders,
+      placedOrders: placedOrders 
     });
   } catch (error) {
     res.status(401).json(error);
   }
 };
 
+exports.getOneOrder = async (req, res) => {
+  const id =req.params.id
+  // console.log(id);
+  //logic
+  try {
+    const objectid = new ObjectId(id);
+    // console.log("Object-id : ", objectid);
+    const orderDetails = await orders.findOne({_id: objectid});
+
+    //send to client
+    res.status(200).json(orderDetails);
+  } catch (error) {
+    res.status(401).json(error);
+  }
+};
+
 exports.addNewOrder = async (req, res) => {
-  const { id, date, time, name, mobile, item, amount, quantity, orderStatus } =
+  const { id, date, time, name, mobile, items, orderStatus } =
     req.body;
   console.log("req.body", req.body);
   try {
+
+    const totalAmount = items.reduce((total, item) => {
+      const subtotal = parseFloat(item.amount) * parseFloat(item.quantity);
+      return total + subtotal;
+    }, 0);
+
     const newOrder = new orders({
       id,
       date,
       time,
       name,
       mobile,
-      item,
-      amount,
-      quantity,
-      orderStatus
+      items,
+      orderStatus,
+      totalAmount 
     });
     await newOrder.save();
     res.status(200).json("Order Successfully Added");
@@ -49,7 +76,7 @@ exports.removeOrder = async (req, res) => {
   console.log("id to delete : ", id);
   try {
     const objectid = new ObjectId(id);
-    console.log("Object-id : ", objectid);
+    // console.log("Object-id : ", objectid);
     const removeOrder = await orders.deleteOne({ _id: objectid });
     if (removeOrder) {
       const allorders = await orders.find();
@@ -64,14 +91,17 @@ exports.updateOrder = async (req, res) => {
   try {
     const orderId = req.params.id; // Assuming the ID is passed as a URL parameter
     const updatedData = req.body; // Assuming the updated data is sent in the request body
-
+    // console.log(req.body);
+    // console.log(req.params.id);
     // Validate if orderId is a valid ObjectId
-    if (!ObjectId.isValid(orderId)) {
-      return res.status(400).json({ error: 'Invalid order ID' });
-    }
-
+    // if (!ObjectId.isValid(orderId)) {
+    //   return res.status(400).json({ error: 'Invalid order ID' });
+    // }
+    const objectid = new ObjectId(orderId);
+    // console.log("Object-id is : ", objectid);
     // Update the order
-    const filter = { _id: ObjectId(orderId) };
+    const filter = { _id: objectid };
+    // console.log(`filter : ${filter}`);
     const updateResult = await orders.updateOne(filter, { $set: updatedData });
 
     if (updateResult.modifiedCount === 1) {

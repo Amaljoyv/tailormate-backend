@@ -22,22 +22,18 @@ const orderSchema = mongoose.Schema({
         type:Number,
         required:true
     },
-    item:{
-        type:String,
-        required:true
-    },
-    amount:{
-        type:Number,
-        required:true
-    },
-    quantity:{
-        type:Number,
+    items:{
+        type:[],
         required:true
     },
     orderStatus:{
         type:String,
         required:true
-    } 
+    } ,
+    totalAmount :{
+        type:Number,
+        required:true
+    }
 })
 
 const orders = mongoose.model("orders",orderSchema)
